@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://insightlab-platform.onrender.com/api/:path*"
+    }
+  ]
+}
+
