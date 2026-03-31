@@ -112,9 +112,17 @@ SIMPLE_JWT = {
 }
 
 # CORS
-CORS_ALLOWED_ORIGINS = os.getenv(
-    'CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000'
-).split(',')
+_cors_default = ['http://localhost:3000', 'http://127.0.0.1:3000']
+_cors_raw = os.getenv('CORS_ALLOWED_ORIGINS', ','.join(_cors_default))
+_cors_tokens = [o.strip() for o in _cors_raw.split(',') if o.strip()]
+
+# Render (or other environments) sometimes set `CORS_ALLOWED_ORIGINS=*`, but
+# django-cors-headers requires full origins (scheme + host). If `*` is provided,
+# ignore it and fall back to the default list so deployment doesn't fail.
+if '*' in _cors_tokens:
+    _cors_tokens = [o for o in _cors_tokens if o != '*'] or _cors_default
+
+CORS_ALLOWED_ORIGINS = _cors_tokens
 CORS_ALLOW_CREDENTIALS = True
 
 # Static / Media
