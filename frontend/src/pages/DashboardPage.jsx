@@ -12,6 +12,15 @@ const STATUS_BADGE = {
   closed:    'bg-surface-100 text-ink-300 border-surface-200',
 }
 
+/** Django REST returns snake_case; tolerate camelCase if we ever normalize. */
+function formatStudyUpdated(study) {
+  const raw = study.updated_at ?? study.updatedAt
+  if (!raw) return 'recently'
+  const d = new Date(raw)
+  if (Number.isNaN(d.getTime())) return 'recently'
+  return formatDistanceToNow(d, { addSuffix: true })
+}
+
 export default function DashboardPage() {
   const { user, logout } = useAuthStore()
   const [studies, setStudies] = useState([])
@@ -107,7 +116,7 @@ export default function DashboardPage() {
             {[
               { label: 'Total studies', value: studies.length, icon: Layers },
               { label: 'Published', value: studies.filter(s => s.status === 'published').length, icon: Eye },
-              { label: 'Total responses', value: studies.reduce((a, s) => a + (s.responseCount || 0), 0), icon: Users },
+              { label: 'Total responses', value: studies.reduce((a, s) => a + (s.response_count ?? s.responseCount ?? 0), 0), icon: Users },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="card px-5 py-4">
                 <div className="flex items-center gap-2 text-ink-300 mb-2">
@@ -172,10 +181,10 @@ export default function DashboardPage() {
                         >
                           <Copy size={14} /> Duplicate
                         </button>
-                        {study.participantToken && (
+                        {(study.participant_token ?? study.participantToken) && (
                           <button
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ink-700 hover:bg-surface-50"
-                            onClick={() => { copyLink(study.participantToken); setMenuOpen(null) }}
+                            onClick={() => { copyLink(study.participant_token ?? study.participantToken); setMenuOpen(null) }}
                           >
                             <ExternalLink size={14} /> Copy link
                           </button>
@@ -195,14 +204,16 @@ export default function DashboardPage() {
                 {/* Content */}
                 <h3 className="font-semibold text-ink-900 mb-1 truncate">{study.title}</h3>
                 <p className="text-xs text-ink-400 mb-4">
-                  Updated {formatDistanceToNow(new Date(study.updatedAt), { addSuffix: true })}
+                  Updated {formatStudyUpdated(study)}
                 </p>
 
                 {/* Stats */}
                 <div className="flex items-center gap-4 text-xs text-ink-400 border-t border-surface-100 pt-3 mb-4">
-                  <span className="flex items-center gap-1"><Users size={12} /> {study.responseCount || 0} responses</span>
-                  <span className="flex items-center gap-1"><Layers size={12} /> {study.blockCount || 0} blocks</span>
-                  {study.deviceTarget && <span className="capitalize">{study.deviceTarget}</span>}
+                  <span className="flex items-center gap-1"><Users size={12} /> {study.response_count ?? study.responseCount ?? 0} responses</span>
+                  <span className="flex items-center gap-1"><Layers size={12} /> {study.block_count ?? study.blockCount ?? 0} blocks</span>
+                  {(study.device_target ?? study.deviceTarget) && (
+                    <span className="capitalize">{study.device_target ?? study.deviceTarget}</span>
+                  )}
                 </div>
 
                 {/* Actions */}
