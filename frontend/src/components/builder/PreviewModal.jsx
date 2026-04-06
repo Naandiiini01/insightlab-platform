@@ -19,6 +19,15 @@ export default function PreviewModal() {
   const block = blocks[step]
   const frame = DEVICE_FRAMES[device] || DEVICE_FRAMES.desktop
 
+  /** Advance preview, or close when already on the last block (e.g. Thank you → Finish). */
+  const handleBlockNext = () => {
+    if (step >= blocks.length - 1) {
+      setPreviewMode(false)
+      return
+    }
+    setStep((s) => s + 1)
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-ink-900/80 backdrop-blur-sm flex flex-col">
       {/* Preview bar */}
@@ -70,7 +79,7 @@ export default function PreviewModal() {
           style={{ width: frame.width, height: frame.height, maxWidth: '100%', maxHeight: '100%' }}
         >
           {block ? (
-            <BlockRenderer block={block} onNext={() => setStep(s => Math.min(blocks.length - 1, s + 1))} previewMode />
+            <BlockRenderer block={block} onNext={handleBlockNext} previewMode />
           ) : (
             <div className="flex items-center justify-center h-full text-ink-400">No blocks</div>
           )}
