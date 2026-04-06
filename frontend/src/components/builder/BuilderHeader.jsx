@@ -32,7 +32,12 @@ export default function BuilderHeader() {
   }
 
   const copyLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/t/${study.participantToken}`)
+    const token = study?.participant_token ?? study?.participantToken
+    if (!token) {
+      toast.error('Publish the study first to get a participant link.')
+      return
+    }
+    navigator.clipboard.writeText(`${window.location.origin}/t/${token}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
     toast.success('Link copied!')
