@@ -1,11 +1,12 @@
 import { useState } from 'react'
 
 export default function QuestionBlock({ block, onNext }) {
-  const c = block.content
+  const c = block.content || {}
   const [answer, setAnswer] = useState(null)
   const [error, setError] = useState('')
 
-  const qType = c.questionType || 'open_text'
+  // Support camelCase (builder) and snake_case (if ever normalized by API)
+  const qType = c.questionType || c.question_type || 'open_text'
   const required = c.required !== false
 
   const handleSubmit = () => {
@@ -24,7 +25,9 @@ export default function QuestionBlock({ block, onNext }) {
           <p className="section-title mb-3">
             {block.type === 'followup' ? 'Follow-up Question' : 'Question'}
           </p>
-          <h2 className="text-xl font-semibold text-ink-900 mb-6">{c.questionText}</h2>
+          <h2 className="text-xl font-semibold text-ink-900 mb-6">
+            {c.questionText || c.question_text || 'Question'}
+          </h2>
 
           <QuestionInput type={qType} options={c.options || []} scale={c.scale} value={answer} onChange={setAnswer} />
 
