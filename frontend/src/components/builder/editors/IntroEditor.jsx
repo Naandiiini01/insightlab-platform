@@ -6,7 +6,7 @@ export default function IntroEditor({ block }) {
 
   return (
     <div className="p-4">
-      <Field label="Study Title">
+      <Field label="Study Title *">
         <input className="input" defaultValue={c.title} onBlur={e => update({ title: e.target.value })} placeholder="Welcome to our study" />
       </Field>
       <Field label="Description">
@@ -16,7 +16,7 @@ export default function IntroEditor({ block }) {
         <textarea className="input resize-none" rows={2} defaultValue={c.researcherNote} onBlur={e => update({ researcherNote: e.target.value })} placeholder="Internal note, not shown to participants…" />
       </Field>
       <Section title="Button" />
-      <Field label="Continue Button Label">
+      <Field label="Continue Button Label *">
         <input className="input" defaultValue={c.continueLabel || 'Get started'} onBlur={e => update({ continueLabel: e.target.value })} />
       </Field>
     </div>

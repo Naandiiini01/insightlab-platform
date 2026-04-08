@@ -7,10 +7,10 @@ export default function TaskEditor({ block }) {
 
   return (
     <div className="p-4">
-      <Field label="Task Title">
+      <Field label="Task Title *">
         <input className="input" defaultValue={c.taskTitle} onBlur={e => update({ taskTitle: e.target.value })} placeholder="Find the pricing page" />
       </Field>
-      <Field label="Task Instructions">
+      <Field label="Task Instructions *">
         <textarea className="input resize-none" rows={4} defaultValue={c.instructions} onBlur={e => update({ instructions: e.target.value })} placeholder="Please navigate to the pricing page and tell us which plan you would choose." />
       </Field>
 

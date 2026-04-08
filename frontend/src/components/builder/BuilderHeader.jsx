@@ -94,6 +94,7 @@ export default function BuilderHeader() {
             <span className="text-xs text-green-500">Saved</span>
           )}
         </div>
+        <div className="text-[11px] text-ink-300 mt-0.5">Save enables after changes.</div>
       </div>
 
       {/* Right actions */}

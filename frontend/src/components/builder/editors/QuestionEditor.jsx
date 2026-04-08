@@ -32,7 +32,7 @@ export default function QuestionEditor({ block }) {
 
   return (
     <div className="p-4">
-      <Field label="Question Text">
+      <Field label="Question Text *">
         <textarea className="input resize-none" rows={3} defaultValue={c.questionText}
           onBlur={e => update({ questionText: e.target.value })}
           placeholder="How easy was it to complete the task?" />
