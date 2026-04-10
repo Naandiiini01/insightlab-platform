@@ -54,6 +54,18 @@ export default function StudyResultsPage() {
   )
 
   const fmt = (s) => s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`
+  const selectedBlockRows = selectedBlock
+    ? sessions.flatMap((session) =>
+        (session.responses || [])
+          .filter((r) => r.block_id === selectedBlock)
+          .map((r) => ({
+            sessionId: session.id,
+            device: session.device_type || '—',
+            submittedAt: r.created_at,
+            answer: formatResponseValue(r),
+          })),
+      )
+    : []
 
   return (
     <div className="min-h-screen bg-surface-50">
@@ -233,18 +245,20 @@ export default function StudyResultsPage() {
 
         {/* Block Results Tab */}
         {tab === 'blocks' && (
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Block list */}
-            <div className="col-span-1 space-y-2">
+            <div className="lg:col-span-4 xl:col-span-3 space-y-2 lg:sticky lg:top-20 self-start max-h-[72vh] overflow-y-auto pr-1">
               {study?.blocks?.map((block, idx) => (
                 <button
                   key={block.id}
                   onClick={() => loadBlockAnalytics(block.id)}
                   className={`w-full text-left card px-4 py-3 transition-all ${
-                    selectedBlock === block.id ? 'ring-2 ring-brand-500 border-brand-200' : 'hover:shadow-md'
+                    selectedBlock === block.id
+                      ? 'ring-2 ring-brand-500 border-brand-200 shadow-md bg-brand-50/40'
+                      : 'hover:shadow-md'
                   }`}
                 >
-                  <p className="text-xs text-ink-400 mb-0.5">Block {idx + 1} · {block.type}</p>
+                  <p className="text-xs text-ink-400 mb-1">Block {idx + 1} · {block.type}</p>
                   <p className="text-sm font-medium text-ink-900 truncate">
                     {block.content?.title || block.content?.taskTitle || block.content?.questionText || block.type}
                   </p>
@@ -253,9 +267,12 @@ export default function StudyResultsPage() {
             </div>
 
             {/* Block analytics panel */}
-            <div className="col-span-2">
+            <div className="lg:col-span-8 xl:col-span-9">
               {blockAnalytics ? (
-                <BlockAnalyticsPanel data={blockAnalytics} />
+                <BlockAnalyticsPanel
+                  data={blockAnalytics}
+                  detailRows={selectedBlockRows}
+                />
               ) : (
                 <div className="card h-64 flex items-center justify-center text-ink-400 text-sm">
                   Select a block to see its results
@@ -269,13 +286,13 @@ export default function StudyResultsPage() {
   )
 }
 
-function BlockAnalyticsPanel({ data }) {
+function BlockAnalyticsPanel({ data, detailRows }) {
   const fmt = (s) => s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`
 
   return (
     <div className="space-y-4">
       <div className="card p-5">
-        <div className="flex items-center gap-6 flex-wrap">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-ink-400 mb-1">Responses</p>
             <p className="text-2xl font-bold text-ink-900">{data.total_responses}</p>
@@ -354,6 +371,61 @@ function BlockAnalyticsPanel({ data }) {
           <p className="text-4xl font-bold text-brand-600">{data.avg_score}</p>
         </div>
       )}
+
+      {/* Session-wise rows (Maze-style detail under selected block) */}
+      <div className="card p-5">
+        <h4 className="font-semibold text-ink-900 mb-4">Session-wise Responses</h4>
+        {detailRows?.length ? (
+          <div className="overflow-x-auto rounded-xl border border-surface-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-200 bg-surface-50">
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Session</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Device</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Submitted</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Response</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailRows.map((row, idx) => (
+                  <tr key={`${row.sessionId}-${idx}`} className="border-b border-surface-100">
+                    <td className="px-3 py-2 font-mono text-xs text-ink-500">{row.sessionId.slice(0, 8)}…</td>
+                    <td className="px-3 py-2 text-ink-700 capitalize">{row.device}</td>
+                    <td className="px-3 py-2 text-ink-500 text-xs">
+                      {row.submittedAt ? formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true }) : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-ink-700 whitespace-pre-wrap">{row.answer}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-ink-400">No session-level responses for this block yet.</p>
+        )}
+      </div>
     </div>
   )
+}
+
+function formatResponseValue(response) {
+  if (!response) return '—'
+  if (response.task_completion_status) {
+    return response.task_completion_status === 'success'
+      ? 'Completed'
+      : response.task_completion_status === 'fail'
+        ? "Couldn't complete"
+        : 'Skipped'
+  }
+  const value = response.answer
+  if (value === null || value === undefined || value === '') return '—'
+  if (Array.isArray(value)) return value.join(', ')
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+  return String(value)
 }

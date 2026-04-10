@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../utils/api'
-import { ArrowLeft, Download, Share2, Copy, Check, Users, TrendingUp, Clock } from 'lucide-react'
+import { ArrowLeft, Download, Copy, Check, Users, TrendingUp, Clock } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 
 export default function ReportPage() {
@@ -91,6 +91,27 @@ export default function ReportPage() {
       return []
     })
   })
+  const blockRows = (study.blocks || []).map((b, idx) => ({
+    id: b.id,
+    order: idx + 1,
+    type: b.type,
+    title: b.content?.title || b.content?.taskTitle || b.content?.questionText || b.content?.question_text || b.type,
+  }))
+
+  const blockSessionRows = sessions.flatMap((session) =>
+    (session.responses || []).map((r) => {
+      const block = blockMetaById[r.block_id] || {}
+      const blockOrder = (study.blocks || []).findIndex((b) => b.id === r.block_id)
+      return {
+        sessionId: session.id,
+        blockOrder: blockOrder >= 0 ? blockOrder + 1 : '—',
+        blockType: block.type || '—',
+        blockTitle: block.content?.title || block.content?.taskTitle || block.content?.questionText || block.content?.question_text || 'Untitled block',
+        submittedAt: r.created_at,
+        response: block.type === 'task' ? formatTaskRow(r) : formatAnswer(r.answer),
+      }
+    }),
+  )
 
   return (
     <div className="min-h-screen bg-surface-50">
@@ -208,6 +229,55 @@ export default function ReportPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Block + session matrix (Maze-style detail) */}
+        <section className="mb-12">
+          <h2 className="text-xl font-bold text-ink-900 mb-5 pb-2 border-b border-surface-200">
+            Block-wise Session Detail
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-4 space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+              {blockRows.map((row) => (
+                <div key={row.id} className="card px-4 py-3">
+                  <p className="text-xs text-ink-400 mb-1">Block #{row.order} · {row.type}</p>
+                  <p className="text-sm text-ink-800 font-medium truncate">{row.title}</p>
+                </div>
+              ))}
+            </div>
+            <div className="lg:col-span-8 card p-4">
+              {blockSessionRows.length === 0 ? (
+                <p className="text-ink-400 text-sm">No session-level block responses yet.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-surface-200">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-surface-200 bg-surface-50">
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Session</th>
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Block</th>
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Type</th>
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Submitted</th>
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Response</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {blockSessionRows.map((row, idx) => (
+                        <tr key={`${row.sessionId}-${idx}`} className="border-b border-surface-100">
+                          <td className="px-3 py-2 font-mono text-xs text-ink-500">{row.sessionId.slice(0, 8)}…</td>
+                          <td className="px-3 py-2 text-ink-700">#{row.blockOrder}</td>
+                          <td className="px-3 py-2 text-ink-500">{row.blockType}</td>
+                          <td className="px-3 py-2 text-ink-500 text-xs">
+                            {row.submittedAt ? formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true }) : '—'}
+                          </td>
+                          <td className="px-3 py-2 text-ink-700 whitespace-pre-wrap">{row.response}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </section>
 
         {/* Participant answers */}

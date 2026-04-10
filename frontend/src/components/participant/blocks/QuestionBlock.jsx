@@ -107,29 +107,52 @@ function QuestionInput({ type, options, scale, value, onChange, allowOther, othe
       )
 
     case 'single_choice':
+    case 'single_choice_other':
       return (
         <div className="space-y-2">
           {options.map((opt, i) => (
-            <button
+            <label
               key={i}
-              className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
+              className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${
                 value === opt ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-surface-200 text-ink-700 hover:border-brand-300'
               }`}
-              onClick={() => onChange(opt)}
             >
+              <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                value === opt ? 'border-brand-600' : 'border-ink-300'
+              }`}>
+                {value === opt && <span className="w-2 h-2 rounded-full bg-brand-600" />}
+              </span>
+              <input
+                type="radio"
+                name="single-choice-answer"
+                className="sr-only"
+                checked={value === opt}
+                onChange={() => onChange(opt)}
+              />
               {opt}
-            </button>
+            </label>
           ))}
           {allowOther && (
             <div className="space-y-2">
-              <button
-                className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
+              <label
+                className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${
                   value === '__other__' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-surface-200 text-ink-700 hover:border-brand-300'
                 }`}
-                onClick={() => onChange('__other__')}
               >
+                <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                  value === '__other__' ? 'border-brand-600' : 'border-ink-300'
+                }`}>
+                  {value === '__other__' && <span className="w-2 h-2 rounded-full bg-brand-600" />}
+                </span>
+                <input
+                  type="radio"
+                  name="single-choice-answer"
+                  className="sr-only"
+                  checked={value === '__other__'}
+                  onChange={() => onChange('__other__')}
+                />
                 Other
-              </button>
+              </label>
               {value === '__other__' && (
                 <input
                   className="input"
