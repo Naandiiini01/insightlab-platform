@@ -100,7 +100,6 @@ export default function BuilderHeader() {
               ) : (
                 <span className="text-xs text-green-600">Saved</span>
               )}
-              <span className="text-[11px] text-ink-400 hidden sm:inline">Save enables after changes.</span>
             </div>
           </div>
         </div>
