@@ -8,8 +8,14 @@ export default function QuestionEditor({ block }) {
   const c = block.content
   const [options, setOptions] = useState(c.options || [])
 
-  const qType = c.questionType || 'open_text'
-  const hasOptions = ['multiple_choice', 'single_choice', 'ranking'].includes(qType)
+  const storedType = c.questionType || 'open_text'
+  const selectValue =
+    storedType === 'single_choice' && c.allowOther === true
+      ? 'single_choice_other'
+      : storedType
+  const hasOptions = ['multiple_choice', 'single_choice', 'single_choice_other', 'ranking'].includes(
+    selectValue,
+  )
 
   const addOption = () => {
     const next = [...options, `Option ${options.length + 1}`]
@@ -39,8 +45,25 @@ export default function QuestionEditor({ block }) {
       </Field>
 
       <Field label="Question Type">
-        <select className="input" value={qType} onChange={e => update({ questionType: e.target.value })}>
-          {QUESTION_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        <select
+          className="input"
+          value={selectValue}
+          onChange={(e) => {
+            const v = e.target.value
+            if (v === 'single_choice_other') {
+              update({ questionType: 'single_choice', allowOther: true })
+            } else if (v === 'multiple_choice' || v === 'ranking') {
+              update({ questionType: v, allowOther: false })
+            } else {
+              update({ questionType: v, allowOther: false })
+            }
+          }}
+        >
+          {QUESTION_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
         </select>
       </Field>
       {block.type === 'question' ? (
@@ -75,18 +98,20 @@ export default function QuestionEditor({ block }) {
           <button className="btn-secondary w-full text-sm justify-center" onClick={addOption}>
             <Plus size={14} /> Add option
           </button>
-          <div className="mt-3">
-            <Toggle
-              label="Allow “Other” option with custom input"
-              checked={c.allowOther === true}
-              onChange={v => update({ allowOther: v })}
-            />
-          </div>
+          {selectValue === 'single_choice' && (
+            <div className="mt-3">
+              <Toggle
+                label="Allow “Other” option with custom input"
+                checked={c.allowOther === true}
+                onChange={(v) => update({ allowOther: v })}
+              />
+            </div>
+          )}
         </>
       )}
 
       {/* Scale config */}
-      {(qType === 'rating' || qType === 'opinion') && (
+      {(storedType === 'rating' || storedType === 'opinion') && (
         <>
           <Section title="Scale" />
           <div className="grid grid-cols-2 gap-2 mb-2">

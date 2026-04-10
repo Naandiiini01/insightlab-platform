@@ -13,8 +13,15 @@ import { BLOCK_TYPES } from '../../utils/constants'
 import { GripVertical, Copy, Trash2, Plus } from 'lucide-react'
 import clsx from 'clsx'
 
-function BlockCard({ block, isSelected, isOverlay }) {
-  const { selectBlock, removeBlock, duplicateBlock, addBlock } = useBuilderStore()
+function BlockCard({
+  block,
+  isSelected,
+  isOverlay,
+  insertMenuOpen = false,
+  onToggleInsertMenu = () => {},
+  onPickInsertType = () => {},
+}) {
+  const { selectBlock, removeBlock, duplicateBlock } = useBuilderStore()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id })
 
@@ -89,23 +96,50 @@ function BlockCard({ block, isSelected, isOverlay }) {
         </div>
       </div>
 
-      {/* Insert-after button */}
-      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          className="w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-lg hover:bg-brand-700"
-          onClick={(e) => { e.stopPropagation(); selectBlock(block.id) }}
-          title="Add block here"
-        >
-          <Plus size={12} />
-        </button>
-      </div>
+      {/* Insert-after: same block types as left sidebar; hidden while dragging overlay */}
+      {!isOverlay && (
+        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            className="w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-lg hover:bg-brand-700"
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleInsertMenu()
+            }}
+            title="Add block here"
+          >
+            <Plus size={12} />
+          </button>
+          {insertMenuOpen && (
+            <div
+              className="absolute left-1/2 top-full mt-1 z-30 w-56 card py-1 shadow-xl border border-surface-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {Object.entries(BLOCK_TYPES).map(([type, meta]) => (
+                <button
+                  key={type}
+                  type="button"
+                  className="w-full text-left px-3 py-2 text-sm text-ink-700 hover:bg-surface-50"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onPickInsertType(type)
+                  }}
+                >
+                  {meta.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 export default function BuilderCanvas() {
-  const { blocks, reorderBlocks, selectedBlockId } = useBuilderStore()
+  const { blocks, reorderBlocks, selectedBlockId, addBlock } = useBuilderStore()
   const [activeId, setActiveId] = useState(null)
+  const [insertMenuIndex, setInsertMenuIndex] = useState(null)
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
@@ -122,8 +156,8 @@ export default function BuilderCanvas() {
   }
 
   return (
-    <main className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-lg mx-auto">
+    <main className="flex-1 overflow-y-auto p-4 sm:p-6 min-w-0 min-h-0">
+      <div className="max-w-lg mx-auto w-full min-w-0">
         {/* Header */}
         <div className="text-center mb-8">
           <p className="section-title">Study Flow</p>
@@ -149,13 +183,21 @@ export default function BuilderCanvas() {
                 {blocks.map((block, idx) => (
                   <div key={block.id} className="relative">
                     {/* Step number */}
-                    <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full
-                                    bg-surface-200 flex items-center justify-center">
+                    <div className="hidden sm:flex absolute -left-8 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full
+                                    bg-surface-200 items-center justify-center">
                       <span className="text-[10px] font-medium text-ink-400">{idx + 1}</span>
                     </div>
                     <BlockCard
                       block={block}
                       isSelected={block.id === selectedBlockId}
+                      insertMenuOpen={insertMenuIndex === idx}
+                      onToggleInsertMenu={() =>
+                        setInsertMenuIndex((prev) => (prev === idx ? null : idx))
+                      }
+                      onPickInsertType={(type) => {
+                        addBlock(type, idx)
+                        setInsertMenuIndex(null)
+                      }}
                     />
                     {/* Connector line */}
                     {idx < blocks.length - 1 && (

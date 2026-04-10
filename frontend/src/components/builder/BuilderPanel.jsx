@@ -24,7 +24,7 @@ export default function BuilderPanel() {
 
   if (!block) {
     return (
-      <aside className="w-80 bg-white border-l border-surface-200 flex items-center justify-center flex-shrink-0">
+      <aside className="w-full xl:w-80 bg-white border-t xl:border-t-0 xl:border-l border-surface-200 flex items-center justify-center flex-shrink-0 min-h-[12rem] xl:min-h-0">
         <div className="text-center px-6">
           <div className="w-10 h-10 rounded-xl bg-surface-100 flex items-center justify-center mx-auto mb-3">
             <Settings2 size={20} className="text-ink-300" />
@@ -40,7 +40,7 @@ export default function BuilderPanel() {
   const meta = BLOCK_TYPES[block.type] || {}
 
   return (
-    <aside className="w-80 bg-white border-l border-surface-200 flex flex-col flex-shrink-0 overflow-hidden">
+    <aside className="w-full xl:w-80 bg-white border-t xl:border-t-0 xl:border-l border-surface-200 flex flex-col flex-shrink-0 overflow-hidden min-h-0 max-h-[50vh] xl:max-h-none">
       {/* Panel header */}
       <div className="px-4 py-3 border-b border-surface-100 flex items-center gap-2 flex-shrink-0">
         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: meta.color }} />

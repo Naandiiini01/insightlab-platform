@@ -65,13 +65,32 @@ export default function TaskBlock({ block, onNext }) {
       {c.embedUrl && (
         <div className="flex-1 relative">
           {showEmbed ? (
-            <div className="w-full h-full flex flex-col">
-              <div className="p-3 border-b border-surface-200 bg-white text-xs text-ink-500">
-                If the site blocks embedding, this embedded view may show blank/broken content. Use “Open in new tab” if that happens.
+            <div className="w-full min-h-[50vh] flex flex-col bg-surface-900">
+              <div className="p-3 border-b border-surface-700 bg-surface-800 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <p className="text-xs text-surface-200 flex-1">
+                  If the site blocks embedding, this view may look blank. Open the task in a new tab, or switch back to choose how you view it.
+                </p>
+                <div className="flex flex-wrap gap-2 shrink-0">
+                  <a
+                    href={c.embedUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-primary text-sm py-1.5 px-3 inline-flex items-center justify-center gap-1.5"
+                  >
+                    <ExternalLink size={14} /> Open in new tab
+                  </a>
+                  <button
+                    type="button"
+                    className="btn-secondary text-sm py-1.5 px-3"
+                    onClick={() => setShowEmbed(false)}
+                  >
+                    Leave embedded view
+                  </button>
+                </div>
               </div>
               <iframe
                 src={c.embedUrl}
-                className="w-full flex-1 border-0"
+                className="w-full flex-1 min-h-[40vh] border-0 bg-white"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
                 title="Task content"
               />

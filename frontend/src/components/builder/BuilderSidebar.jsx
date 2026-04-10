@@ -14,7 +14,7 @@ export default function BuilderSidebar() {
   const insertAfter = selectedIdx >= 0 ? selectedIdx : blocks.length - 1
 
   return (
-    <aside className="w-56 bg-white border-r border-surface-200 flex flex-col overflow-y-auto flex-shrink-0">
+    <aside className="w-full xl:w-56 xl:max-w-[14rem] bg-white border-b xl:border-b-0 xl:border-r border-surface-200 flex flex-col overflow-y-auto flex-shrink-0 min-h-0">
       {/* Device target */}
       <div className="p-4 border-b border-surface-100">
         <p className="section-title mb-3">Device Target</p>

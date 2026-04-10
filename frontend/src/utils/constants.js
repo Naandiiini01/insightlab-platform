@@ -12,6 +12,7 @@ export const QUESTION_TYPES = [
   { value: 'open_text',       label: 'Open Text' },
   { value: 'multiple_choice', label: 'Multiple Choice' },
   { value: 'single_choice',   label: 'Single Choice' },
+  { value: 'single_choice_other', label: 'Single choice + Other' },
   { value: 'rating',          label: 'Rating Scale' },
   { value: 'opinion',         label: 'Opinion Scale' },
   { value: 'yes_no',          label: 'Yes / No' },

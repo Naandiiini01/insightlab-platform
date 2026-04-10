@@ -52,7 +52,7 @@ export default function StudyBuilderPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-surface-50">
       <BuilderHeader />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col xl:flex-row overflow-hidden min-h-0">
         <BuilderSidebar />
         <BuilderCanvas />
         <BuilderPanel />
