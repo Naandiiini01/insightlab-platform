@@ -43,6 +43,15 @@ export default function QuestionEditor({ block }) {
           {QUESTION_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
       </Field>
+      {block.type === 'question' ? (
+        <p className="text-xs text-ink-400 -mt-1 mb-3">
+          Use this for standalone questions shown to every participant.
+        </p>
+      ) : (
+        <p className="text-xs text-ink-400 -mt-1 mb-3">
+          Follow-up is best for contextual probes after a task.
+        </p>
+      )}
 
       {/* Options for choice-based types */}
       {hasOptions && (
@@ -66,6 +75,13 @@ export default function QuestionEditor({ block }) {
           <button className="btn-secondary w-full text-sm justify-center" onClick={addOption}>
             <Plus size={14} /> Add option
           </button>
+          <div className="mt-3">
+            <Toggle
+              label="Allow “Other” option with custom input"
+              checked={c.allowOther === true}
+              onChange={v => update({ allowOther: v })}
+            />
+          </div>
         </>
       )}
 

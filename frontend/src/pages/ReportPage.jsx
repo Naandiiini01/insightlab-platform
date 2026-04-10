@@ -8,12 +8,19 @@ export default function ReportPage() {
   const { studyId } = useParams()
   const navigate = useNavigate()
   const [report, setReport] = useState(null)
+  const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    api.get(`/analytics/${studyId}/report/`)
-      .then(r => setReport(r.data))
+    Promise.all([
+      api.get(`/analytics/${studyId}/report/`),
+      api.get(`/sessions/study/${studyId}/`),
+    ])
+      .then(([reportRes, sessionsRes]) => {
+        setReport(reportRes.data)
+        setSessions(sessionsRes.data?.sessions || [])
+      })
       .finally(() => setLoading(false))
   }, [studyId])
 
@@ -34,6 +41,56 @@ export default function ReportPage() {
   const s = report?.summary || {}
   const study = report?.study || {}
   const blocks = report?.blocks_analytics || []
+  const blockMetaById = Object.fromEntries((study.blocks || []).map((b) => [b.id, b]))
+  const answerRows = sessions.flatMap((session) => {
+    return (session.responses || []).flatMap((r) => {
+      const block = blockMetaById[r.block_id] || {}
+      const bt = block.type || ''
+
+      if (bt === 'task') {
+        const embedRaw =
+          r.answer && typeof r.answer === 'object' && !Array.isArray(r.answer)
+            ? r.answer.embed_mode
+            : null
+        const embedLabel =
+          embedRaw === 'embedded'
+            ? 'Embedded'
+            : embedRaw === 'new_tab'
+              ? 'New tab'
+              : null
+        return [
+          {
+            sessionId: session.id,
+            submittedAt: r.created_at,
+            blockType: 'task',
+            blockTitle:
+              block.content?.taskTitle || block.content?.title || 'Task',
+            embedLabel,
+            answer: formatTaskRow(r),
+          },
+        ]
+      }
+
+      if (bt === 'question' || bt === 'followup') {
+        if (r.answer === null || r.answer === undefined || r.answer === '') return []
+        return [
+          {
+            sessionId: session.id,
+            submittedAt: r.created_at,
+            blockType: bt,
+            blockTitle:
+              block.content?.questionText ||
+              block.content?.question_text ||
+              'Question',
+            embedLabel: null,
+            answer: formatAnswer(r.answer),
+          },
+        ]
+      }
+
+      return []
+    })
+  })
 
   return (
     <div className="min-h-screen bg-surface-50">
@@ -153,6 +210,38 @@ export default function ReportPage() {
           )}
         </section>
 
+        {/* Participant answers */}
+        <section className="mb-12">
+          <h2 className="text-xl font-bold text-ink-900 mb-5 pb-2 border-b border-surface-200">
+            Participant Answers
+          </h2>
+          {answerRows.length === 0 ? (
+            <p className="text-ink-400 text-sm">No participant answers recorded yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {answerRows.map((row, idx) => (
+                <div key={`${row.sessionId}-${idx}`} className="card p-4">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-ink-400 mb-2">
+                    <span className="badge bg-surface-100 text-ink-500 border border-surface-200">
+                      {row.blockType}
+                    </span>
+                    {row.embedLabel && (
+                      <span className="badge bg-brand-50 text-brand-700 border border-brand-200">
+                        {row.embedLabel}
+                      </span>
+                    )}
+                    <span>Session {row.sessionId.slice(0, 8)}…</span>
+                    <span>•</span>
+                    <span>{formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true })}</span>
+                  </div>
+                  <p className="text-sm font-medium text-ink-900 mb-1">{row.blockTitle}</p>
+                  <p className="text-sm text-ink-700 whitespace-pre-wrap">{row.answer}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* Footer */}
         <div className="border-t border-surface-200 pt-6 text-center">
           <p className="text-xs text-ink-300">
@@ -162,4 +251,24 @@ export default function ReportPage() {
       </div>
     </div>
   )
+}
+
+function formatAnswer(answer) {
+  if (answer === null || answer === undefined || answer === '') return '—'
+  if (Array.isArray(answer)) return answer.join(', ')
+  if (typeof answer === 'object') {
+    try {
+      return JSON.stringify(answer)
+    } catch {
+      return String(answer)
+    }
+  }
+  return String(answer)
+}
+
+function formatTaskRow(r) {
+  const status = r.task_completion_status || '—'
+  const map = { success: 'Completed', fail: "Couldn't complete", skip: 'Skipped' }
+  const label = map[status] || status
+  return label
 }

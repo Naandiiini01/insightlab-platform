@@ -29,10 +29,15 @@ export default function TaskBlock({ block, onNext }) {
   }
 
   const handleSubmit = () => {
-    onNext({
+    const payload = {
       task_completed: status === 'success',
       task_completion_status: status,
-    })
+    }
+    // Client report hint: how the participant viewed the task (easy to remove later).
+    if (c.embedUrl) {
+      payload.answer = { embed_mode: showEmbed ? 'embedded' : 'new_tab' }
+    }
+    onNext(payload)
   }
 
   const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`

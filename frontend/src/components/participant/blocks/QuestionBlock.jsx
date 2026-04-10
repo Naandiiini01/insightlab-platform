@@ -3,19 +3,41 @@ import { useState } from 'react'
 export default function QuestionBlock({ block, onNext }) {
   const c = block.content || {}
   const [answer, setAnswer] = useState(null)
+  const [otherText, setOtherText] = useState('')
   const [error, setError] = useState('')
 
   // Support camelCase (builder) and snake_case (if ever normalized by API)
   const qType = c.questionType || c.question_type || 'open_text'
   const required = c.required !== false
+  const allowOther = c.allowOther === true || c.allow_other === true
+  const usingOther = qType === 'single_choice'
+    ? answer === '__other__'
+    : qType === 'multiple_choice'
+      ? Array.isArray(answer) && answer.includes('__other__')
+      : false
 
   const handleSubmit = () => {
-    if (required && (answer === null || answer === '' || (Array.isArray(answer) && !answer.length))) {
+    const hasBaseAnswer = !(answer === null || answer === '' || (Array.isArray(answer) && !answer.length))
+    if (required && !hasBaseAnswer) {
       setError('This question is required.')
       return
     }
+    if (required && usingOther && !otherText.trim()) {
+      setError('Please enter your "Other" answer.')
+      return
+    }
     setError('')
-    onNext({ answer })
+    let normalized = answer
+    if (allowOther && usingOther) {
+      if (qType === 'single_choice') {
+        normalized = otherText.trim()
+      } else if (qType === 'multiple_choice') {
+        const prev = Array.isArray(answer) ? answer.filter((v) => v !== '__other__') : []
+        if (otherText.trim()) prev.push(otherText.trim())
+        normalized = prev
+      }
+    }
+    onNext({ answer: normalized })
   }
 
   return (
@@ -29,7 +51,16 @@ export default function QuestionBlock({ block, onNext }) {
             {c.questionText || c.question_text || 'Question'}
           </h2>
 
-          <QuestionInput type={qType} options={c.options || []} scale={c.scale} value={answer} onChange={setAnswer} />
+          <QuestionInput
+            type={qType}
+            options={c.options || []}
+            scale={c.scale}
+            value={answer}
+            allowOther={allowOther}
+            otherText={otherText}
+            onChange={setAnswer}
+            onChangeOther={setOtherText}
+          />
 
           {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
 
@@ -45,7 +76,7 @@ export default function QuestionBlock({ block, onNext }) {
   )
 }
 
-function QuestionInput({ type, options, scale, value, onChange }) {
+function QuestionInput({ type, options, scale, value, onChange, allowOther, otherText, onChangeOther }) {
   switch (type) {
     case 'open_text':
       return (
@@ -89,6 +120,26 @@ function QuestionInput({ type, options, scale, value, onChange }) {
               {opt}
             </button>
           ))}
+          {allowOther && (
+            <div className="space-y-2">
+              <button
+                className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
+                  value === '__other__' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-surface-200 text-ink-700 hover:border-brand-300'
+                }`}
+                onClick={() => onChange('__other__')}
+              >
+                Other
+              </button>
+              {value === '__other__' && (
+                <input
+                  className="input"
+                  placeholder="Type your answer…"
+                  value={otherText}
+                  onChange={(e) => onChangeOther(e.target.value)}
+                />
+              )}
+            </div>
+          )}
         </div>
       )
 
@@ -117,6 +168,37 @@ function QuestionInput({ type, options, scale, value, onChange }) {
               </button>
             )
           })}
+          {allowOther && (
+            <div className="space-y-2">
+              <button
+                className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                  Array.isArray(value) && value.includes('__other__')
+                    ? 'border-brand-500 bg-brand-50 text-brand-700'
+                    : 'border-surface-200 text-ink-700 hover:border-brand-300'
+                }`}
+                onClick={() => {
+                  const prev = Array.isArray(value) ? value : []
+                  const selected = prev.includes('__other__')
+                  onChange(selected ? prev.filter((v) => v !== '__other__') : [...prev, '__other__'])
+                }}
+              >
+                <span className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${
+                  Array.isArray(value) && value.includes('__other__') ? 'bg-brand-600 border-brand-600' : 'border-ink-300'
+                }`}>
+                  {Array.isArray(value) && value.includes('__other__') && <span className="text-white text-[10px]">✓</span>}
+                </span>
+                Other
+              </button>
+              {Array.isArray(value) && value.includes('__other__') && (
+                <input
+                  className="input"
+                  placeholder="Type your answer…"
+                  value={otherText}
+                  onChange={(e) => onChangeOther(e.target.value)}
+                />
+              )}
+            </div>
+          )}
         </div>
       )
 
