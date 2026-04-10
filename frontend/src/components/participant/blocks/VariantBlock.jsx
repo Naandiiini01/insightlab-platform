@@ -1,8 +1,26 @@
 export default function VariantBlock({ block, session, onNext }) {
-  // The assigned variant comes from the session
   const c = block.content
-  const assigned = session?.variantAssigned
-  const variant = c.variants?.find(v => v.name === assigned) || c.variants?.[0]
+  const variants = c.variants || []
+  const assignmentMethod = c.assignmentMethod || c.assignment_method || 'random'
+  const assigned = session?.variantAssigned || session?.variant_assigned
+
+  // Prefer explicit session assignment from backend.
+  let variant = variants.find((v) => v.name === assigned)
+
+  // Fallback by configured assignment method for preview/legacy sessions.
+  if (!variant && variants.length > 0) {
+    if (assignmentMethod === 'random') {
+      variant = variants[Math.floor(Math.random() * variants.length)]
+    } else {
+      variant = variants[0]
+    }
+  }
+
+  // If selected variant has no URL, pick first variant with a URL to avoid false "not working" states.
+  if ((!variant?.embedUrl) && variants.length > 0) {
+    const withUrl = variants.find((v) => v.embedUrl)
+    if (withUrl) variant = withUrl
+  }
 
   if (!variant) return (
     <div className="min-h-screen flex items-center justify-center">

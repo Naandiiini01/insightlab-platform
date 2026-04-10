@@ -33,7 +33,30 @@ def session_start(request, token):
         vb = variant_blocks.first()
         variants = vb.content.get('variants', [])
         if variants:
-            variant_assigned = random.choice(variants).get('name', '')
+            method = vb.content.get('assignmentMethod') or vb.content.get('assignment_method') or 'random'
+
+            # Manual: allow optional preferred variant name from request body.
+            if method == 'manual':
+                preferred = (
+                    request.data.get('variant_name')
+                    or request.data.get('variantName')
+                    or request.data.get('variant')
+                )
+                if preferred:
+                    match = next((v for v in variants if v.get('name') == preferred), None)
+                    if match:
+                        variant_assigned = match.get('name', '')
+                if not variant_assigned:
+                    variant_assigned = variants[0].get('name', '')
+
+            # Equal split: assign by session count (round-robin).
+            elif method == 'equal':
+                idx = study.sessions.count() % len(variants)
+                variant_assigned = variants[idx].get('name', '')
+
+            # Random: default existing behavior.
+            else:
+                variant_assigned = random.choice(variants).get('name', '')
 
     session = ParticipantSession.objects.create(
         study=study,

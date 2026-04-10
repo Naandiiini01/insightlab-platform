@@ -40,6 +40,8 @@ export default function ParticipantPage() {
         const ua = navigator.userAgent
         const isMobile = /Mobi|Android/i.test(ua)
         const isTablet = /Tablet|iPad/i.test(ua)
+        const qp = new URLSearchParams(window.location.search)
+        const variantPref = qp.get('variant') || qp.get('variant_name') || qp.get('variantName')
         const sessionRes = await api.post(`/sessions/start/${participantToken}/`, {
           device_type: isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop',
           browser: getBrowser(ua),
@@ -47,6 +49,7 @@ export default function ParticipantPage() {
           screen_width: window.screen.width,
           screen_height: window.screen.height,
           user_agent: ua,
+          ...(variantPref ? { variant_name: variantPref } : {}),
         })
         sessionRef.current = sessionRes.data
         setPhase('consent')

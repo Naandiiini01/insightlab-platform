@@ -8,14 +8,8 @@ export default function QuestionEditor({ block }) {
   const c = block.content
   const [options, setOptions] = useState(c.options || [])
 
-  const storedType = c.questionType || 'open_text'
-  const selectValue =
-    storedType === 'single_choice' && c.allowOther === true
-      ? 'single_choice_other'
-      : storedType
-  const hasOptions = ['multiple_choice', 'single_choice', 'single_choice_other', 'ranking'].includes(
-    selectValue,
-  )
+  const qType = c.questionType || 'open_text'
+  const hasOptions = ['multiple_choice', 'single_choice', 'ranking'].includes(qType)
 
   const addOption = () => {
     const next = [...options, `Option ${options.length + 1}`]
@@ -47,17 +41,8 @@ export default function QuestionEditor({ block }) {
       <Field label="Question Type">
         <select
           className="input"
-          value={selectValue}
-          onChange={(e) => {
-            const v = e.target.value
-            if (v === 'single_choice_other') {
-              update({ questionType: 'single_choice', allowOther: true })
-            } else if (v === 'multiple_choice' || v === 'ranking') {
-              update({ questionType: v, allowOther: false })
-            } else {
-              update({ questionType: v, allowOther: false })
-            }
-          }}
+          value={qType}
+          onChange={(e) => update({ questionType: e.target.value })}
         >
           {QUESTION_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -98,7 +83,7 @@ export default function QuestionEditor({ block }) {
           <button className="btn-secondary w-full text-sm justify-center" onClick={addOption}>
             <Plus size={14} /> Add option
           </button>
-          {selectValue === 'single_choice' && (
+          {(qType === 'single_choice' || qType === 'multiple_choice') && (
             <div className="mt-3">
               <Toggle
                 label="Allow “Other” option with custom input"
@@ -111,7 +96,7 @@ export default function QuestionEditor({ block }) {
       )}
 
       {/* Scale config */}
-      {(storedType === 'rating' || storedType === 'opinion') && (
+      {(qType === 'rating' || qType === 'opinion') && (
         <>
           <Section title="Scale" />
           <div className="grid grid-cols-2 gap-2 mb-2">

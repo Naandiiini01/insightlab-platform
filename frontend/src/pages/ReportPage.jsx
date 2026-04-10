@@ -11,6 +11,7 @@ export default function ReportPage() {
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [selectedBlockId, setSelectedBlockId] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -42,55 +43,6 @@ export default function ReportPage() {
   const study = report?.study || {}
   const blocks = report?.blocks_analytics || []
   const blockMetaById = Object.fromEntries((study.blocks || []).map((b) => [b.id, b]))
-  const answerRows = sessions.flatMap((session) => {
-    return (session.responses || []).flatMap((r) => {
-      const block = blockMetaById[r.block_id] || {}
-      const bt = block.type || ''
-
-      if (bt === 'task') {
-        const embedRaw =
-          r.answer && typeof r.answer === 'object' && !Array.isArray(r.answer)
-            ? r.answer.embed_mode
-            : null
-        const embedLabel =
-          embedRaw === 'embedded'
-            ? 'Embedded'
-            : embedRaw === 'new_tab'
-              ? 'New tab'
-              : null
-        return [
-          {
-            sessionId: session.id,
-            submittedAt: r.created_at,
-            blockType: 'task',
-            blockTitle:
-              block.content?.taskTitle || block.content?.title || 'Task',
-            embedLabel,
-            answer: formatTaskRow(r),
-          },
-        ]
-      }
-
-      if (bt === 'question' || bt === 'followup') {
-        if (r.answer === null || r.answer === undefined || r.answer === '') return []
-        return [
-          {
-            sessionId: session.id,
-            submittedAt: r.created_at,
-            blockType: bt,
-            blockTitle:
-              block.content?.questionText ||
-              block.content?.question_text ||
-              'Question',
-            embedLabel: null,
-            answer: formatAnswer(r.answer),
-          },
-        ]
-      }
-
-      return []
-    })
-  })
   const blockRows = (study.blocks || []).map((b, idx) => ({
     id: b.id,
     order: idx + 1,
@@ -98,11 +50,20 @@ export default function ReportPage() {
     title: b.content?.title || b.content?.taskTitle || b.content?.questionText || b.content?.question_text || b.type,
   }))
 
+  useEffect(() => {
+    if (!selectedBlockId && blockRows.length > 0) {
+      setSelectedBlockId(blockRows[0].id)
+    }
+  }, [selectedBlockId, blockRows])
+
   const blockSessionRows = sessions.flatMap((session) =>
-    (session.responses || []).map((r) => {
+    (session.responses || [])
+      .filter((r) => !selectedBlockId || r.block_id === selectedBlockId)
+      .map((r) => {
       const block = blockMetaById[r.block_id] || {}
       const blockOrder = (study.blocks || []).findIndex((b) => b.id === r.block_id)
       return {
+        blockId: r.block_id,
         sessionId: session.id,
         blockOrder: blockOrder >= 0 ? blockOrder + 1 : '—',
         blockType: block.type || '—',
@@ -239,10 +200,19 @@ export default function ReportPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="lg:col-span-4 space-y-2 max-h-[60vh] overflow-y-auto pr-1">
               {blockRows.map((row) => (
-                <div key={row.id} className="card px-4 py-3">
+                <button
+                  key={row.id}
+                  type="button"
+                  onClick={() => setSelectedBlockId(row.id)}
+                  className={`w-full text-left card px-4 py-3 transition-all ${
+                    selectedBlockId === row.id
+                      ? 'ring-2 ring-brand-500 border-brand-200 shadow-md bg-brand-50/40'
+                      : 'hover:shadow-md'
+                  }`}
+                >
                   <p className="text-xs text-ink-400 mb-1">Block #{row.order} · {row.type}</p>
                   <p className="text-sm text-ink-800 font-medium truncate">{row.title}</p>
-                </div>
+                </button>
               ))}
             </div>
             <div className="lg:col-span-8 card p-4">
@@ -278,38 +248,6 @@ export default function ReportPage() {
               )}
             </div>
           </div>
-        </section>
-
-        {/* Participant answers */}
-        <section className="mb-12">
-          <h2 className="text-xl font-bold text-ink-900 mb-5 pb-2 border-b border-surface-200">
-            Participant Answers
-          </h2>
-          {answerRows.length === 0 ? (
-            <p className="text-ink-400 text-sm">No participant answers recorded yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {answerRows.map((row, idx) => (
-                <div key={`${row.sessionId}-${idx}`} className="card p-4">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-ink-400 mb-2">
-                    <span className="badge bg-surface-100 text-ink-500 border border-surface-200">
-                      {row.blockType}
-                    </span>
-                    {row.embedLabel && (
-                      <span className="badge bg-brand-50 text-brand-700 border border-brand-200">
-                        {row.embedLabel}
-                      </span>
-                    )}
-                    <span>Session {row.sessionId.slice(0, 8)}…</span>
-                    <span>•</span>
-                    <span>{formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true })}</span>
-                  </div>
-                  <p className="text-sm font-medium text-ink-900 mb-1">{row.blockTitle}</p>
-                  <p className="text-sm text-ink-700 whitespace-pre-wrap">{row.answer}</p>
-                </div>
-              ))}
-            </div>
-          )}
         </section>
 
         {/* Footer */}
