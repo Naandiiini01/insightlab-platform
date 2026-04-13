@@ -11,7 +11,6 @@ export default function ReportPage() {
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
-  const [selectedBlockId, setSelectedBlockId] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -44,15 +43,6 @@ export default function ReportPage() {
     title: b.content?.title || b.content?.taskTitle || b.content?.questionText || b.content?.question_text || b.type,
   }))
 
-  useEffect(() => {
-    if (selectedBlockId || blockRows.length === 0) return
-    const responseBlockIds = new Set(
-      sessions.flatMap((session) => (session.responses || []).map((r) => r.block_id)),
-    )
-    const firstWithResponses = blockRows.find((b) => responseBlockIds.has(b.id))
-    setSelectedBlockId(firstWithResponses?.id || blockRows[0].id)
-  }, [selectedBlockId, blockRows, sessions])
-
   if (loading) return (
     <div className="min-h-screen bg-surface-50 flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
@@ -61,7 +51,6 @@ export default function ReportPage() {
 
   const blockSessionRows = sessions.flatMap((session) =>
     (session.responses || [])
-      .filter((r) => !selectedBlockId || r.block_id === selectedBlockId)
       .map((r) => {
       const block = blockMetaById[r.block_id] || {}
       const blockOrder = (study.blocks || []).findIndex((b) => b.id === r.block_id)
@@ -258,26 +247,20 @@ export default function ReportPage() {
         </section>
 
         {/* Block + session matrix (Maze-style detail) */}
-        <section className="mb-12">
+        <section className="mb-12 print:hidden">
           <h2 className="text-xl font-bold text-ink-900 mb-5 pb-2 border-b border-surface-200">
             Block-wise Session Detail
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="lg:col-span-4 space-y-2 max-h-[60vh] overflow-y-auto pr-1">
               {blockRows.map((row) => (
-                <button
+                <div
                   key={row.id}
-                  type="button"
-                  onClick={() => setSelectedBlockId(row.id)}
-                  className={`w-full text-left card px-4 py-3 transition-all ${
-                    selectedBlockId === row.id
-                      ? 'ring-2 ring-brand-500 border-brand-200 shadow-md bg-brand-50/40'
-                      : 'hover:shadow-md'
-                  }`}
+                  className="w-full text-left card px-4 py-3"
                 >
                   <p className="text-xs text-ink-400 mb-1">Block #{row.order} · {row.type}</p>
                   <p className="text-sm text-ink-800 font-medium truncate">{row.title}</p>
-                </button>
+                </div>
               ))}
             </div>
             <div className="lg:col-span-8 card p-4">
