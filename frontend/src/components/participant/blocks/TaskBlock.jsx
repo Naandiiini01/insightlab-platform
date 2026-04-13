@@ -63,10 +63,10 @@ export default function TaskBlock({ block, onNext, previewMode = false }) {
 
       {/* Embed area */}
       {c.embedUrl && (
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-h-0 overflow-hidden">
           {showEmbed ? (
-            <div className="w-full min-h-[50vh] flex flex-col bg-surface-900">
-              <div className="p-3 border-b border-surface-700 bg-surface-800 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+            <div className="w-full h-full min-h-0 flex flex-col bg-surface-900 overflow-hidden">
+              <div className="p-3 border-b border-surface-700 bg-surface-800 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 shrink-0">
                 <p className="text-xs text-surface-200 flex-1">
                   If the site blocks embedding, this view may look blank. Open the task in a new tab, or switch back to choose how you view it.
                 </p>
@@ -90,7 +90,7 @@ export default function TaskBlock({ block, onNext, previewMode = false }) {
               </div>
               <iframe
                 src={c.embedUrl}
-                className="w-full flex-1 min-h-[40vh] border-0 bg-white"
+                className="w-full flex-1 min-h-0 border-0 bg-white"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
                 title="Task content"
               />

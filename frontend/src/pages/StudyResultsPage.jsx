@@ -19,7 +19,7 @@ export default function StudyResultsPage() {
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [blockAnalytics, setBlockAnalytics] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState('overview') // overview | sessions | blocks
+  const [tab, setTab] = useState('blocks') // blocks | sessions | overview
 
   useEffect(() => {
     const load = async () => {
@@ -107,9 +107,9 @@ export default function StudyResultsPage() {
         {/* Tabs */}
         <div className="flex gap-1 border-b border-surface-200 mb-8">
           {[
-            { id: 'overview', label: 'Overview', Icon: BarChart2 },
-            { id: 'sessions', label: 'Sessions', Icon: Users },
             { id: 'blocks',   label: 'Block Results', Icon: Filter },
+            { id: 'sessions', label: 'Sessions', Icon: Users },
+            { id: 'overview', label: 'Overview', Icon: BarChart2 },
           ].map(({ id, label, Icon }) => (
             <button
               key={id}
