@@ -76,6 +76,23 @@ export default function ReportPage() {
       }
     }),
   )
+  const printableRowsByBlock = blockRows
+    .map((b) => ({
+      ...b,
+      rows: sessions.flatMap((session) =>
+        (session.responses || [])
+          .filter((r) => r.block_id === b.id)
+          .map((r) => {
+            const block = blockMetaById[r.block_id] || {}
+            return {
+              sessionId: session.id,
+              submittedAt: r.created_at,
+              response: block.type === 'task' ? formatTaskRow(r) : formatAnswer(r.answer),
+            }
+          }),
+      ),
+    }))
+    .filter((b) => b.rows.length > 0)
 
   return (
     <div className="min-h-screen bg-surface-50">
@@ -135,6 +152,51 @@ export default function ReportPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Print-only: full session-level evidence across all blocks */}
+        <section className="mb-12 hidden print:block">
+          <h2 className="text-xl font-bold text-ink-900 mb-5 pb-2 border-b border-surface-200">
+            Session Detail (All Blocks)
+          </h2>
+          {printableRowsByBlock.length === 0 ? (
+            <p className="text-ink-400 text-sm">No session-level block responses yet.</p>
+          ) : (
+            <div className="space-y-5">
+              {printableRowsByBlock.map((block) => (
+                <div key={block.id} className="card p-4 break-inside-avoid">
+                  <div className="mb-3">
+                    <span className="badge bg-surface-100 text-ink-500 border border-surface-200">
+                      Block #{block.order} · {block.type}
+                    </span>
+                    <p className="text-sm font-medium text-ink-900 mt-1">{block.title}</p>
+                  </div>
+                  <div className="overflow-x-auto rounded-xl border border-surface-200">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-surface-200 bg-surface-50">
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Session</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Submitted</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Response</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {block.rows.map((row, idx) => (
+                          <tr key={`${block.id}-${row.sessionId}-${idx}`} className="border-b border-surface-100">
+                            <td className="px-3 py-2 font-mono text-xs text-ink-500">{row.sessionId.slice(0, 8)}…</td>
+                            <td className="px-3 py-2 text-ink-500 text-xs">
+                              {row.submittedAt ? formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true }) : '—'}
+                            </td>
+                            <td className="px-3 py-2 text-ink-700 whitespace-pre-wrap">{row.response}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Methodology */}
