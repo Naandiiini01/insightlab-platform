@@ -31,16 +31,39 @@ export default function BuilderHeader() {
     toast.success('Study unpublished')
   }
 
-  const copyLink = () => {
+  const copyLink = async () => {
     const token = study?.participant_token ?? study?.participantToken
     if (!token) {
       toast.error('Publish the study first to get a participant link.')
       return
     }
-    navigator.clipboard.writeText(`${window.location.origin}/t/${token}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-    toast.success('Link copied!')
+    const url = `${window.location.origin}/t/${token}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      toast.success('Link copied!')
+      return
+    } catch {
+      // Mobile/in-app browsers can block clipboard API; use legacy fallback.
+      try {
+        const input = document.createElement('textarea')
+        input.value = url
+        input.setAttribute('readonly', '')
+        input.style.position = 'fixed'
+        input.style.left = '-9999px'
+        document.body.appendChild(input)
+        input.select()
+        const ok = document.execCommand('copy')
+        document.body.removeChild(input)
+        if (!ok) throw new Error('copy failed')
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        toast.success('Link copied!')
+      } catch {
+        toast.error('Could not copy automatically. Please copy manually from the address bar.')
+      }
+    }
   }
 
   const isPublished = study?.status === 'published'
