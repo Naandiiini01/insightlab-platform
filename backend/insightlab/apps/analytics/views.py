@@ -153,20 +153,16 @@ def report_summary(request, study_pk):
 
     blocks_analytics = []
     for block in study.blocks.all():
-        try:
-            # Reuse block_analytics logic inline
-            responses = BlockResponse.objects.filter(block=block)
-            blocks_analytics.append({
-                'block_id': str(block.id),
-                'block_type': block.type,
-                'order': block.order,
-                'total_responses': responses.count(),
-                'avg_time_seconds': round(
-                    responses.aggregate(avg=Avg('time_spent_seconds'))['avg'] or 0, 1
-                ),
-            })
-        except Exception:
-            pass
+        responses = BlockResponse.objects.filter(block=block)
+        blocks_analytics.append({
+            'block_id': str(block.id),
+            'block_type': block.type,
+            'order': block.order,
+            'total_responses': responses.count(),
+            'avg_time_seconds': round(
+                responses.aggregate(avg=Avg('time_spent_seconds'))['avg'] or 0, 1
+            ),
+        })
 
     sessions = study.sessions.all()
     total = sessions.count()

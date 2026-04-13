@@ -51,10 +51,13 @@ export default function ReportPage() {
   }))
 
   useEffect(() => {
-    if (!selectedBlockId && blockRows.length > 0) {
-      setSelectedBlockId(blockRows[0].id)
-    }
-  }, [selectedBlockId, blockRows])
+    if (selectedBlockId || blockRows.length === 0) return
+    const responseBlockIds = new Set(
+      sessions.flatMap((session) => (session.responses || []).map((r) => r.block_id)),
+    )
+    const firstWithResponses = blockRows.find((b) => responseBlockIds.has(b.id))
+    setSelectedBlockId(firstWithResponses?.id || blockRows[0].id)
+  }, [selectedBlockId, blockRows, sessions])
 
   const blockSessionRows = sessions.flatMap((session) =>
     (session.responses || [])
