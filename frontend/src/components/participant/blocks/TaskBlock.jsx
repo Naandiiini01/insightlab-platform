@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ExternalLink, Clock, CheckCircle, XCircle } from 'lucide-react'
 
-export default function TaskBlock({ block, onNext }) {
+export default function TaskBlock({ block, onNext, previewMode = false }) {
   const c = block.content
   const [status, setStatus] = useState(null) // null | 'success' | 'fail'
   const [elapsed, setElapsed] = useState(0)
@@ -43,7 +43,7 @@ export default function TaskBlock({ block, onNext }) {
   const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={`${previewMode ? 'h-full min-h-0' : 'min-h-screen'} flex flex-col`}>
       {/* Task header */}
       <div className="bg-white border-b border-surface-200 px-6 py-4 flex items-start justify-between gap-4">
         <div className="flex-1">

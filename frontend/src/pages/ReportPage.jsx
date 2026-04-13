@@ -33,12 +33,6 @@ export default function ReportPage() {
 
   const handlePrint = () => window.print()
 
-  if (loading) return (
-    <div className="min-h-screen bg-surface-50 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
-
   const s = report?.summary || {}
   const study = report?.study || {}
   const blocks = report?.blocks_analytics || []
@@ -58,6 +52,12 @@ export default function ReportPage() {
     const firstWithResponses = blockRows.find((b) => responseBlockIds.has(b.id))
     setSelectedBlockId(firstWithResponses?.id || blockRows[0].id)
   }, [selectedBlockId, blockRows, sessions])
+
+  if (loading) return (
+    <div className="min-h-screen bg-surface-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
 
   const blockSessionRows = sessions.flatMap((session) =>
     (session.responses || [])
