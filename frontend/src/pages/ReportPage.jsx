@@ -11,6 +11,7 @@ export default function ReportPage() {
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [selectedBlockId, setSelectedBlockId] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -43,12 +44,6 @@ export default function ReportPage() {
     title: b.content?.title || b.content?.taskTitle || b.content?.questionText || b.content?.question_text || b.type,
   }))
 
-  if (loading) return (
-    <div className="min-h-screen bg-surface-50 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
-
   const blockSessionRows = sessions.flatMap((session) =>
     (session.responses || [])
       .map((r) => {
@@ -65,6 +60,19 @@ export default function ReportPage() {
       }
     }),
   )
+  useEffect(() => {
+    if (selectedBlockId || blockRows.length === 0) return
+    const responseBlockIds = new Set(
+      sessions.flatMap((session) => (session.responses || []).map((r) => r.block_id)),
+    )
+    const firstWithResponses = blockRows.find((b) => responseBlockIds.has(b.id))
+    setSelectedBlockId(firstWithResponses?.id || blockRows[0].id)
+  }, [selectedBlockId, blockRows, sessions])
+
+  const screenRows = selectedBlockId
+    ? blockSessionRows.filter((r) => r.blockId === selectedBlockId)
+    : blockSessionRows
+
   const printableRowsByBlock = blockRows
     .map((b) => ({
       ...b,
@@ -82,6 +90,12 @@ export default function ReportPage() {
       ),
     }))
     .filter((b) => b.rows.length > 0)
+
+  if (loading) return (
+    <div className="min-h-screen bg-surface-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-surface-50">
@@ -254,17 +268,23 @@ export default function ReportPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="lg:col-span-4 space-y-2 max-h-[60vh] overflow-y-auto pr-1">
               {blockRows.map((row) => (
-                <div
+                <button
                   key={row.id}
-                  className="w-full text-left card px-4 py-3"
+                  type="button"
+                  onClick={() => setSelectedBlockId(row.id)}
+                  className={`w-full text-left card px-4 py-3 transition-all ${
+                    selectedBlockId === row.id
+                      ? 'ring-2 ring-brand-500 border-brand-200 shadow-md bg-brand-50/40'
+                      : 'hover:shadow-md'
+                  }`}
                 >
                   <p className="text-xs text-ink-400 mb-1">Block #{row.order} · {row.type}</p>
                   <p className="text-sm text-ink-800 font-medium truncate">{row.title}</p>
-                </div>
+                </button>
               ))}
             </div>
             <div className="lg:col-span-8 card p-4">
-              {blockSessionRows.length === 0 ? (
+              {screenRows.length === 0 ? (
                 <p className="text-ink-400 text-sm">No session-level block responses yet.</p>
               ) : (
                 <div className="overflow-x-auto rounded-xl border border-surface-200">
@@ -279,7 +299,7 @@ export default function ReportPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {blockSessionRows.map((row, idx) => (
+                      {screenRows.map((row, idx) => (
                         <tr key={`${row.sessionId}-${idx}`} className="border-b border-surface-100">
                           <td className="px-3 py-2 font-mono text-xs text-ink-500">{row.sessionId.slice(0, 8)}…</td>
                           <td className="px-3 py-2 text-ink-700">#{row.blockOrder}</td>
