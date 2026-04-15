@@ -90,6 +90,47 @@ export default function ReportPage() {
       ),
     }))
     .filter((b) => b.rows.length > 0)
+  const questionBlocks = (study.blocks || []).filter((b) => b.type === 'question' || b.type === 'followup')
+  const printableQuestionSections = questionBlocks.map((qb, idx) => {
+    const rows = sessions.flatMap((session) =>
+      (session.responses || [])
+        .filter((r) => r.block_id === qb.id && r.answer !== null && r.answer !== undefined && r.answer !== '')
+        .map((r) => ({
+          sessionId: session.id,
+          answer: r.answer,
+          submittedAt: r.created_at,
+        })),
+    )
+
+    const distribution = {}
+    rows.forEach((row) => {
+      if (Array.isArray(row.answer)) {
+        row.answer.forEach((opt) => {
+          const key = String(opt)
+          distribution[key] = (distribution[key] || 0) + 1
+        })
+      } else if (typeof row.answer !== 'object') {
+        const key = String(row.answer)
+        distribution[key] = (distribution[key] || 0) + 1
+      }
+    })
+
+    const totalChoices = Object.values(distribution).reduce((sum, n) => sum + n, 0)
+    return {
+      id: qb.id,
+      order: (study.blocks || []).findIndex((b) => b.id === qb.id) + 1 || idx + 1,
+      title: qb.content?.questionText || qb.content?.question_text || 'Question',
+      qType: qb.content?.questionType || qb.content?.question_type || 'open_text',
+      rows,
+      distribution: Object.entries(distribution)
+        .map(([option, count]) => ({
+          option,
+          count,
+          pct: totalChoices ? Math.round((count / totalChoices) * 100) : 0,
+        }))
+        .sort((a, b) => b.count - a.count),
+    }
+  }).filter((sct) => sct.rows.length > 0)
 
   if (loading) return (
     <div className="min-h-screen bg-surface-50 flex items-center justify-center">
@@ -195,6 +236,64 @@ export default function ReportPage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Print-only: richer question evidence (Maze-style detail) */}
+        <section className="mb-12 hidden print:block">
+          <h2 className="text-xl font-bold text-ink-900 mb-5 pb-2 border-b border-surface-200">
+            Question Responses (Detailed)
+          </h2>
+          {printableQuestionSections.length === 0 ? (
+            <p className="text-ink-400 text-sm">No question responses recorded yet.</p>
+          ) : (
+            <div className="space-y-5">
+              {printableQuestionSections.map((q) => (
+                <div key={q.id} className="card p-4 break-inside-avoid">
+                  <div className="mb-3">
+                    <span className="badge bg-surface-100 text-ink-500 border border-surface-200">
+                      Block #{q.order} · {q.qType}
+                    </span>
+                    <p className="text-sm font-medium text-ink-900 mt-1">{q.title}</p>
+                  </div>
+
+                  {q.distribution.length > 0 && (
+                    <div className="mb-4 rounded-xl border border-surface-200 overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-surface-200 bg-surface-50">
+                            <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Option</th>
+                            <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Count</th>
+                            <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Share</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {q.distribution.map((d) => (
+                            <tr key={`${q.id}-${d.option}`} className="border-b border-surface-100">
+                              <td className="px-3 py-2 text-ink-700">{d.option}</td>
+                              <td className="px-3 py-2 text-ink-700">{d.count}</td>
+                              <td className="px-3 py-2 text-ink-500">{d.pct}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    {q.rows.map((row, idx) => (
+                      <div key={`${q.id}-${row.sessionId}-${idx}`} className="rounded-lg border border-surface-200 px-3 py-2">
+                        <div className="flex items-center justify-between gap-2 text-xs text-ink-400 mb-1">
+                          <span className="font-mono">{row.sessionId.slice(0, 8)}…</span>
+                          <span>{row.submittedAt ? formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true }) : '—'}</span>
+                        </div>
+                        <p className="text-sm text-ink-700 whitespace-pre-wrap">{formatAnswer(row.answer)}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
