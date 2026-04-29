@@ -102,12 +102,8 @@ export default function ParticipantPage() {
       return mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
     }
 
-    const stopStreams = (streams = []) => {
-      streams.forEach((s) => s?.getTracks?.().forEach((t) => t.stop()))
-    }
-
-    try {
-      if (consentPayload?.screen_recording) {
+    if (consentPayload?.screen_recording && navigator.mediaDevices?.getDisplayMedia) {
+      try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: false,
@@ -117,16 +113,21 @@ export default function ParticipantPage() {
           screenVideoRef.current.play().catch(() => {})
         }
         const recorder = createRecorder(screenStream, ['video/webm;codecs=vp9', 'video/webm', 'video/mp4'])
-        if (!recorder) return
-        recorder.ondataavailable = async (ev) => {
-          const idx = chunkIndexRef.current.screen++
-          await uploadRecordingBlob(ev.data, 'screen', idx)
+        if (recorder) {
+          recorder.ondataavailable = async (ev) => {
+            const idx = chunkIndexRef.current.screen++
+            await uploadRecordingBlob(ev.data, 'screen', idx)
+          }
+          recorder.start(5000) // chunk every 5s
+          recordersRef.current.screen = { recorder, stream: screenStream }
         }
-        recorder.start(5000) // chunk every 5s
-        recordersRef.current.screen = { recorder, stream: screenStream }
+      } catch {
+        // Mobile browsers often block screen capture; keep other recordings running.
       }
+    }
 
-      if (consentPayload?.camera) {
+    if (consentPayload?.camera) {
+      try {
         const cameraStream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: false,
@@ -136,36 +137,37 @@ export default function ParticipantPage() {
           cameraVideoRef.current.play().catch(() => {})
         }
         const recorder = createRecorder(cameraStream, ['video/webm;codecs=vp9', 'video/webm', 'video/mp4'])
-        if (!recorder) return
-        recorder.ondataavailable = async (ev) => {
-          const idx = chunkIndexRef.current.camera++
-          await uploadRecordingBlob(ev.data, 'camera', idx)
+        if (recorder) {
+          recorder.ondataavailable = async (ev) => {
+            const idx = chunkIndexRef.current.camera++
+            await uploadRecordingBlob(ev.data, 'camera', idx)
+          }
+          recorder.start(5000)
+          recordersRef.current.camera = { recorder, stream: cameraStream }
         }
-        recorder.start(5000)
-        recordersRef.current.camera = { recorder, stream: cameraStream }
+      } catch {
+        // Keep study running even if camera permission/recording is unavailable.
       }
+    }
 
-      if (consentPayload?.audio) {
+    if (consentPayload?.audio) {
+      try {
         const audioStream = await navigator.mediaDevices.getUserMedia({
           video: false,
           audio: true,
         })
         const recorder = createRecorder(audioStream, ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'])
-        if (!recorder) return
-        recorder.ondataavailable = async (ev) => {
-          const idx = chunkIndexRef.current.audio++
-          await uploadRecordingBlob(ev.data, 'audio', idx)
+        if (recorder) {
+          recorder.ondataavailable = async (ev) => {
+            const idx = chunkIndexRef.current.audio++
+            await uploadRecordingBlob(ev.data, 'audio', idx)
+          }
+          recorder.start(5000)
+          recordersRef.current.audio = { recorder, stream: audioStream }
         }
-        recorder.start(5000)
-        recordersRef.current.audio = { recorder, stream: audioStream }
+      } catch {
+        // Keep study running even if audio permission/recording is unavailable.
       }
-    } catch (e) {
-      // If permissions are denied, still allow the study to run without recordings.
-      stopStreams([
-        recordersRef.current.screen?.stream,
-        recordersRef.current.camera?.stream,
-        recordersRef.current.audio?.stream,
-      ])
     }
   }
 

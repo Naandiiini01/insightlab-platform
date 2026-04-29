@@ -36,6 +36,9 @@ export default function ReportPage() {
   const s = report?.summary || {}
   const study = report?.study || {}
   const blocks = report?.blocks_analytics || []
+  const avgTimeByBlockId = Object.fromEntries(
+    (blocks || []).map((b) => [b.block_id, b.avg_time_seconds]),
+  )
   const blockMetaById = Object.fromEntries((study.blocks || []).map((b) => [b.id, b]))
   const blockRows = (study.blocks || []).map((b, idx) => ({
     id: b.id,
@@ -393,7 +396,7 @@ export default function ReportPage() {
                         <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Session</th>
                         <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Block</th>
                         <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Type</th>
-                        <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Submitted</th>
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Avg time</th>
                         <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Response</th>
                       </tr>
                     </thead>
@@ -403,9 +406,7 @@ export default function ReportPage() {
                           <td className="px-3 py-2 font-mono text-xs text-ink-500">{row.sessionId.slice(0, 8)}…</td>
                           <td className="px-3 py-2 text-ink-700">#{row.blockOrder}</td>
                           <td className="px-3 py-2 text-ink-500">{row.blockType}</td>
-                          <td className="px-3 py-2 text-ink-500 text-xs">
-                            {row.submittedAt ? formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true }) : '—'}
-                          </td>
+                          <td className="px-3 py-2 text-ink-500 text-xs">{avgTimeByBlockId[row.blockId] ?? '—'}s</td>
                           <td className="px-3 py-2 text-ink-700 whitespace-pre-wrap">{row.response}</td>
                         </tr>
                       ))}
