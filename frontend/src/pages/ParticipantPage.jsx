@@ -275,7 +275,7 @@ export default function ParticipantPage() {
                 className="w-32 h-20 rounded border border-surface-200 bg-black"
               />
             )}
-            {consent.screen_recording && (
+            {consent.screen_recording && recordersRef.current.screen?.stream && (
               <video
                 ref={screenVideoRef}
                 muted
