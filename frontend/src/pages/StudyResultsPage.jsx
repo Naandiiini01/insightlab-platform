@@ -61,7 +61,7 @@ export default function StudyResultsPage() {
           .map((r) => ({
             sessionId: session.id,
             device: session.device_type || '—',
-            submittedAt: r.created_at,
+            durationSeconds: r.time_spent_seconds,
             answer: formatResponseValue(r),
           })),
       )
@@ -382,7 +382,7 @@ function BlockAnalyticsPanel({ data, detailRows }) {
                 <tr className="border-b border-surface-200 bg-surface-50">
                   <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Session</th>
                   <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Device</th>
-                  <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Submitted</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Duration</th>
                   <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Response</th>
                 </tr>
               </thead>
@@ -392,7 +392,7 @@ function BlockAnalyticsPanel({ data, detailRows }) {
                     <td className="px-3 py-2 font-mono text-xs text-ink-500">{row.sessionId.slice(0, 8)}…</td>
                     <td className="px-3 py-2 text-ink-700 capitalize">{row.device}</td>
                     <td className="px-3 py-2 text-ink-500 text-xs">
-                      {row.submittedAt ? formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true }) : '—'}
+                      {row.durationSeconds !== null && row.durationSeconds !== undefined ? fmt(row.durationSeconds) : '—'}
                     </td>
                     <td className="px-3 py-2 text-ink-700 whitespace-pre-wrap">{row.answer}</td>
                   </tr>

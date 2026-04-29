@@ -36,9 +36,6 @@ export default function ReportPage() {
   const s = report?.summary || {}
   const study = report?.study || {}
   const blocks = report?.blocks_analytics || []
-  const avgTimeByBlockId = Object.fromEntries(
-    (blocks || []).map((b) => [b.block_id, b.avg_time_seconds]),
-  )
   const blockMetaById = Object.fromEntries((study.blocks || []).map((b) => [b.id, b]))
   const blockRows = (study.blocks || []).map((b, idx) => ({
     id: b.id,
@@ -59,6 +56,7 @@ export default function ReportPage() {
         blockType: block.type || '—',
         blockTitle: block.content?.title || block.content?.taskTitle || block.content?.questionText || block.content?.question_text || 'Untitled block',
         submittedAt: r.created_at,
+        durationSeconds: r.time_spent_seconds,
         response: block.type === 'task' ? formatTaskRow(r) : formatAnswer(r.answer),
       }
     }),
@@ -396,7 +394,7 @@ export default function ReportPage() {
                         <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Session</th>
                         <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Block</th>
                         <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Type</th>
-                        <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Avg time</th>
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Duration</th>
                         <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Response</th>
                       </tr>
                     </thead>
@@ -406,7 +404,7 @@ export default function ReportPage() {
                           <td className="px-3 py-2 font-mono text-xs text-ink-500">{row.sessionId.slice(0, 8)}…</td>
                           <td className="px-3 py-2 text-ink-700">#{row.blockOrder}</td>
                           <td className="px-3 py-2 text-ink-500">{row.blockType}</td>
-                          <td className="px-3 py-2 text-ink-500 text-xs">{avgTimeByBlockId[row.blockId] ?? '—'}s</td>
+                          <td className="px-3 py-2 text-ink-500 text-xs">{formatDuration(row.durationSeconds)}</td>
                           <td className="px-3 py-2 text-ink-700 whitespace-pre-wrap">{row.response}</td>
                         </tr>
                       ))}
@@ -447,4 +445,11 @@ function formatTaskRow(r) {
   const map = { success: 'Completed', fail: "Couldn't complete", skip: 'Skipped' }
   const label = map[status] || status
   return label
+}
+
+function formatDuration(seconds) {
+  if (seconds === null || seconds === undefined || Number.isNaN(Number(seconds))) return '—'
+  const s = Math.round(Number(seconds))
+  if (s >= 60) return `${Math.floor(s / 60)}m ${s % 60}s`
+  return `${s}s`
 }
