@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../utils/api'
 import { ArrowLeft, Download, Copy, Check, Users, TrendingUp, Clock } from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
+import { format } from 'date-fns'
 
 export default function ReportPage() {
   const { studyId } = useParams()
@@ -84,7 +84,7 @@ export default function ReportPage() {
             const block = blockMetaById[r.block_id] || {}
             return {
               sessionId: session.id,
-              submittedAt: r.created_at,
+              durationSeconds: r.time_spent_seconds,
               response: block.type === 'task' ? formatTaskRow(r) : formatAnswer(r.answer),
             }
           }),
@@ -99,7 +99,7 @@ export default function ReportPage() {
         .map((r) => ({
           sessionId: session.id,
           answer: r.answer,
-          submittedAt: r.created_at,
+          durationSeconds: r.time_spent_seconds,
         })),
     )
 
@@ -221,7 +221,7 @@ export default function ReportPage() {
                       <thead>
                         <tr className="border-b border-surface-200 bg-surface-50">
                           <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Session</th>
-                          <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Submitted</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Duration</th>
                           <th className="text-left px-3 py-2 text-xs font-semibold text-ink-400">Response</th>
                         </tr>
                       </thead>
@@ -230,7 +230,7 @@ export default function ReportPage() {
                           <tr key={`${block.id}-${row.sessionId}-${idx}`} className="border-b border-surface-100">
                             <td className="px-3 py-2 font-mono text-xs text-ink-500">{row.sessionId.slice(0, 8)}…</td>
                             <td className="px-3 py-2 text-ink-500 text-xs">
-                              {row.submittedAt ? formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true }) : '—'}
+                              {formatDuration(row.durationSeconds)}
                             </td>
                             <td className="px-3 py-2 text-ink-700 whitespace-pre-wrap">{row.response}</td>
                           </tr>
@@ -290,7 +290,7 @@ export default function ReportPage() {
                       <div key={`${q.id}-${row.sessionId}-${idx}`} className="rounded-lg border border-surface-200 px-3 py-2">
                         <div className="flex items-center justify-between gap-2 text-xs text-ink-400 mb-1">
                           <span className="font-mono">{row.sessionId.slice(0, 8)}…</span>
-                          <span>{row.submittedAt ? formatDistanceToNow(new Date(row.submittedAt), { addSuffix: true }) : '—'}</span>
+                          <span>{formatDuration(row.durationSeconds)}</span>
                         </div>
                         <p className="text-sm text-ink-700 whitespace-pre-wrap">{formatAnswer(row.answer)}</p>
                       </div>
